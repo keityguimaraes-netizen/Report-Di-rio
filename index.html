@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report Diário de Vendas — Vero</title>
+<style>
+    :root {
+        --rosa-vero: #EE0056;
+        --bordo: #D20032;
+        --bordo-escuro: #920026;
+        --rosa-claro: #FF7EA0;
+        --laranja: #FF8D17;
+        --amarelo: #FFD000;
+        --cinza1: #ECF0EE;
+        --cinza2: #D3D2CF;
+        --cinza3: #9A9B9E;
+        --grafite: #5F5F5F;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        padding: 32px 16px;
+        background: var(--cinza1);
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--grafite);
+        display: flex;
+        justify-content: center;
+    }
+    .card {
+        width: 100%;
+        max-width: 760px;
+        background: #FFFFFF;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgba(146, 0, 38, 0.08);
+    }
+    .header {
+        background: linear-gradient(120deg, var(--rosa-vero), var(--bordo-escuro));
+        padding: 28px 32px;
+        color: #fff;
+    }
+    .header .eyebrow {
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        opacity: 0.85;
+        margin: 0 0 6px 0;
+        font-weight: 600;
+    }
+    .header h1 { margin: 0; font-size: 22px; font-weight: 700; }
+    .header .periodo { margin: 6px 0 0 0; font-size: 13px; opacity: 0.9; }
+
+    .total-band {
+        margin: -18px 24px 0 24px;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        padding: 18px 20px 6px 20px;
+        position: relative;
+        z-index: 2;
+    }
+    .total-band .total-label {
+        font-size: 12px; font-weight: 700; color: var(--bordo-escuro);
+        text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
+    }
+    .total-band .total-date { font-size: 13px; color: var(--grafite); margin-bottom: 14px; }
+
+    .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding-bottom: 14px; }
+    .tile { background: var(--cinza1); border-radius: 12px; padding: 10px 8px; display: flex; flex-direction: column; gap: 4px; }
+    .tile-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .tile-label { font-size: 10.5px; color: var(--grafite); font-weight: 600; }
+    .tile-value { font-size: 19px; font-weight: 800; color: #2B2B2B; }
+
+    .section { padding: 24px 24px 8px 24px; }
+    .section h2 {
+        font-size: 14px; font-weight: 700; color: var(--bordo-escuro);
+        margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;
+    }
+    .section h2::before {
+        content: ""; width: 4px; height: 14px; background: var(--rosa-vero);
+        border-radius: 2px; display: inline-block;
+    }
+
+    table.daily-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.daily-table thead th {
+        text-align: right; font-size: 11px; text-transform: uppercase;
+        letter-spacing: 0.04em; padding: 8px 10px; border-bottom: 2px solid var(--cinza2);
+    }
+    table.daily-table thead th:first-child { text-align: left; color: var(--grafite); }
+    table.daily-table tbody tr:nth-child(odd) { background: var(--cinza1); }
+    table.daily-table td { padding: 9px 10px; border-bottom: 1px solid var(--cinza2); }
+    td.cell-date { text-align: left; font-weight: 600; color: var(--grafite); white-space: nowrap; }
+    td.cell-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    td.cell-num-strong { font-weight: 800; }
+    tr.row-latest { background: var(--rosa-claro) !important; }
+    .badge-hoje {
+        margin-left: 8px; font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+        background: var(--rosa-vero); color: #fff; padding: 2px 7px; border-radius: 999px; letter-spacing: 0.04em;
+    }
+
+    .partners-wrap { padding: 4px 24px 24px 24px; }
+    details.partner { border: 1px solid var(--cinza2); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+    details.partner[open] { border-color: var(--rosa-claro); }
+    details.partner summary {
+        list-style: none; cursor: pointer; padding: 12px 14px; display: flex;
+        align-items: center; gap: 10px; background: var(--cinza1);
+    }
+    details.partner summary::-webkit-details-marker { display: none; }
+    .partner-name { font-weight: 700; font-size: 13.5px; color: #2B2B2B; flex: 0 0 auto; }
+    .partner-summary { font-size: 12px; color: var(--grafite); flex: 1 1 auto; text-align: right; font-weight: 600; }
+    .dot-sep { margin: 0 6px; color: var(--cinza3); }
+    .chevron { color: var(--rosa-vero); font-size: 13px; transition: transform 0.15s ease; flex: 0 0 auto; }
+    details.partner[open] .chevron { transform: rotate(180deg); }
+    .partner-body { padding: 12px 14px 14px 14px; background: #fff; max-height: 340px; overflow-y: auto; }
+
+    .footer {
+        padding: 16px 24px 24px 24px; font-size: 11px; color: var(--cinza3);
+        display: flex; justify-content: space-between; border-top: 1px solid var(--cinza2); margin-top: 8px;
+    }
+    .footer .brand { font-weight: 800; color: var(--rosa-vero); letter-spacing: 0.04em; }
+
+    .state-msg { padding: 40px 24px; text-align: center; color: var(--grafite); font-size: 13px; }
+    .state-msg.error { color: var(--bordo); }
+
+    @media (max-width: 480px) {
+        .tiles { grid-template-columns: repeat(2, 1fr); }
+        table.daily-table { font-size: 11.5px; }
+        .partner-summary { display: none; }
+    }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+    <div class="header">
+        <p class="eyebrow">Vero · Report diário</p>
+        <h1 id="titulo">Report Diário de Vendas</h1>
+        <p class="periodo" id="periodo">Carregando...</p>
+    </div>
+    <div class="state-msg" id="loading">Carregando dados de dados_card_diario.csv...</div>
+    <div id="content" style="display:none">
+        <div class="total-band">
+            <div class="total-label">Total do dia mais recente</div>
+            <div class="total-date" id="data-recente"></div>
+            <div class="tiles" id="tiles"></div>
+        </div>
+        <div class="section">
+            <h2 id="titulo-diario">Detalhamento diário</h2>
+            <table class="daily-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left">Dia</th>
+                        <th style="color:#EE0056">Brutas</th>
+                        <th style="color:#920026">Líquidas</th>
+                        <th style="color:#FF8D17">Canceladas</th>
+                        <th style="color:#5F5F5F">Instaladas</th>
+                    </tr>
+                </thead>
+                <tbody id="daily-rows"></tbody>
+            </table>
+        </div>
+        <div class="section" style="padding-bottom:0;"><h2>Detalhamento por parceiro</h2></div>
+        <div class="partners-wrap" id="partners"></div>
+        <div class="footer">
+            <span>Atualizado automaticamente a partir de <code>dados_card_diario.csv</code></span>
+            <span class="brand">VERO</span>
+        </div>
+    </div>
+</div>
+
+<script>
+const CSV_URL = 'dados_card_diario.csv';
+
+const COLORS = {
+    rosa_vero: '#EE0056', bordo_escuro: '#920026', laranja: '#FF8D17', grafite: '#5F5F5F'
+};
+const WEEKDAYS_PT = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+const MONTHS_PT = ['', 'janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const MESES_NUM = {janeiro:1,fevereiro:2,'março':3,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+
+const COLUMN_ALIASES = {
+    'data':'Data','mes':'Mes','mês':'Mes','dia':'Dia',
+    'parceiro':'Parceiro','canal venda':'Parceiro','canal de venda':'Parceiro',
+    'vendas brutas':'Vendas Brutas','total bruta':'Vendas Brutas','total brutas':'Vendas Brutas','brutas':'Vendas Brutas',
+    'vendas liquidas':'Vendas Liquidas','vendas líquidas':'Vendas Liquidas','total liquida':'Vendas Liquidas','total líquida':'Vendas Liquidas','liquidas':'Vendas Liquidas','líquidas':'Vendas Liquidas',
+    'canceladas':'Canceladas','vendas canceladas':'Canceladas','total cancelamento comercial':'Canceladas','total cancelamentos':'Canceladas','total cancelamento':'Canceladas',
+    'instaladas':'Instaladas','vendas instaladas':'Instaladas','total instaladas':'Instaladas'
+};
+
+function parseCSV(text) {
+    text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').trim();
+    const lines = text.split('\n');
+    const rawHeader = splitCSVLine(lines[0]);
+    const header = rawHeader.map(h => {
+        const key = h.trim().toLowerCase();
+        return COLUMN_ALIASES[key] || h.trim();
+    });
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const cells = splitCSVLine(lines[i]);
+        const row = {};
+        header.forEach((h, idx) => row[h] = (cells[idx] !== undefined ? cells[idx].trim() : ''));
+        rows.push(row);
+    }
+    return rows;
+}
+
+function splitCSVLine(line) {
+    const out = [];
+    let cur = '', inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') { inQuotes = !inQuotes; }
+        else if (c === ',' && !inQuotes) { out.push(cur); cur = ''; }
+        else { cur += c; }
+    }
+    out.push(cur);
+    return out;
+}
+
+function num(v) {
+    const n = parseFloat(String(v).replace(',', '.'));
+    return isNaN(n) ? 0 : n;
+}
+
+function buildDateKey(row) {
+    if (row['Data']) {
+        const d = new Date(row['Data']);
+        if (!isNaN(d)) return d;
+        const m = row['Data'].match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+        if (m) return new Date(+m[3] < 100 ? 2000 + +m[3] : +m[3], +m[2]-1, +m[1]);
+        return null;
+    }
+    if (row['Mes'] && row['Dia']) {
+        const mesNum = MESES_NUM[row['Mes'].trim().toLowerCase()];
+        const ano = new Date().getFullYear();
+        if (mesNum) return new Date(ano, mesNum - 1, parseInt(row['Dia'], 10));
+    }
+    return null;
+}
+
+function fmtNum(v) {
+    return Math.round(v).toLocaleString('pt-BR');
+}
+
+function fmtDateFull(d) {
+    const wd = WEEKDAYS_PT[(d.getDay() + 6) % 7];
+    return `${wd}, ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function fmtPeriodLabel(dates) {
+    const first = dates[0], last = dates[dates.length - 1];
+    if (first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear()) {
+        const nome = MONTHS_PT[first.getMonth() + 1];
+        return nome.charAt(0).toUpperCase() + nome.slice(1) + '/' + first.getFullYear();
+    }
+    const f = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+    return `${f(first)} a ${f(last)}/${last.getFullYear()}`;
+}
+
+function groupSum(rows, keyFn) {
+    const map = new Map();
+    rows.forEach(r => {
+        const key = keyFn(r);
+        if (!map.has(key)) map.set(key, {brutas:0, liquidas:0, canceladas:0, instaladas:0, date: r._date});
+        const g = map.get(key);
+        g.brutas += num(r['Vendas Brutas']);
+        g.liquidas += num(r['Vendas Liquidas']);
+        g.canceladas += num(r['Canceladas']);
+        g.instaladas += num(r['Instaladas']);
+    });
+    return map;
+}
+
+function tilesHTML(totals) {
+    const items = [
+        ['brutas','Vendas Brutas', COLORS.rosa_vero],
+        ['liquidas','Vendas Líquidas', COLORS.bordo_escuro],
+        ['canceladas','Canceladas', COLORS.laranja],
+        ['instaladas','Instaladas', '#FFD000']
+    ];
+    return items.map(([key,label,color]) => `
+        <div class="tile">
+            <span class="tile-dot" style="background:${color}"></span>
+            <span class="tile-label">${label}</span>
+            <span class="tile-value">${fmtNum(totals[key])}</span>
+        </div>`).join('');
+}
+
+function dailyRowsHTML(dailyMap, mostRecentTime) {
+    const entries = [...dailyMap.values()].sort((a,b) => b.date - a.date);
+    return entries.map(g => {
+        const isLatest = g.date.getTime() === mostRecentTime;
+        const badge = isLatest ? '<span class="badge-hoje">mais recente</span>' : '';
+        return `
+        <tr class="${isLatest ? 'row-latest' : ''}">
+            <td class="cell-date">${fmtDateFull(g.date)}${badge}</td>
+            <td class="cell-num" style="color:${COLORS.rosa_vero}">${fmtNum(g.brutas)}</td>
+            <td class="cell-num" style="color:${COLORS.bordo_escuro}">${fmtNum(g.liquidas)}</td>
+            <td class="cell-num" style="color:${COLORS.laranja}">${fmtNum(g.canceladas)}</td>
+            <td class="cell-num cell-num-strong" style="color:${COLORS.grafite}">${fmtNum(g.instaladas)}</td>
+        </tr>`;
+    }).join('');
+}
+
+function partnersHTML(rows, mostRecentTime) {
+    const partners = [...new Set(rows.map(r => r['Parceiro']))].sort();
+    return partners.map(p => {
+        const prows = rows.filter(r => r['Parceiro'] === p);
+        const daily = groupSum(prows, r => r._date.getTime());
+        const totals = {brutas:0, liquidas:0, canceladas:0, instaladas:0};
+        daily.forEach(g => { totals.brutas += g.brutas; totals.liquidas += g.liquidas; totals.canceladas += g.canceladas; totals.instaladas += g.instaladas; });
+        return `
+        <details class="partner">
+            <summary>
+                <span class="partner-name">${p}</span>
+                <span class="partner-summary">
+                    <span style="color:${COLORS.rosa_vero}">${fmtNum(totals.brutas)} brutas</span>
+                    <span class="dot-sep">·</span>
+                    <span style="color:${COLORS.grafite}">${fmtNum(totals.instaladas)} instaladas</span>
+                </span>
+                <span class="chevron">▾</span>
+            </summary>
+            <div class="partner-body">
+                <table class="daily-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left">Dia</th>
+                            <th style="color:${COLORS.rosa_vero}">Brutas</th>
+                            <th style="color:${COLORS.bordo_escuro}">Líquidas</th>
+                            <th style="color:${COLORS.laranja}">Canceladas</th>
+                            <th style="color:${COLORS.grafite}">Instaladas</th>
+                        </tr>
+                    </thead>
+                    <tbody>${dailyRowsHTML(daily, mostRecentTime)}</tbody>
+                </table>
+            </div>
+        </details>`;
+    }).join('');
+}
+
+async function render() {
+    try {
+        const res = await fetch(CSV_URL, {cache: 'no-store'});
+        if (!res.ok) throw new Error('Não encontrei o arquivo ' + CSV_URL);
+        const text = await res.text();
+        const rows = parseCSV(text).filter(r => r['Parceiro']);
+
+        rows.forEach(r => { r._date = buildDateKey(r); });
+        const validRows = rows.filter(r => r._date && !isNaN(r._date));
+        if (!validRows.length) throw new Error('Nenhuma linha com data válida encontrada no CSV.');
+
+        const dates = [...new Set(validRows.map(r => r._date.getTime()))].sort((a,b) => a-b).map(t => new Date(t));
+        const dailyTotals = groupSum(validRows, r => r._date.getTime());
+        const mostRecentTime = Math.max(...dates.map(d => d.getTime()));
+        const mostRecent = dailyTotals.get(mostRecentTime);
+
+        document.getElementById('periodo').textContent = fmtPeriodLabel(dates);
+        document.getElementById('titulo-diario').textContent = 'Detalhamento diário — ' + fmtPeriodLabel(dates);
+        document.getElementById('data-recente').textContent = fmtDateFull(new Date(mostRecentTime));
+        document.getElementById('tiles').innerHTML = tilesHTML(mostRecent);
+        document.getElementById('daily-rows').innerHTML = dailyRowsHTML(dailyTotals, mostRecentTime);
+        document.getElementById('partners').innerHTML = partnersHTML(validRows, mostRecentTime);
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+    } catch (err) {
+        document.getElementById('loading').textContent = 'Erro ao carregar dados: ' + err.message;
+        document.getElementById('loading').classList.add('error');
+    }
+}
+
+render();
+</script>
+</body>
+</html>
